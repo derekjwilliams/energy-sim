@@ -1,6 +1,6 @@
 using Random
 using JSON3
-
+# using LibPQ, DBInterface
 function update_asset_power!(asset::Asset)
     if asset.asset_type == "load"
         asset.power = -rand(100:200)
@@ -25,19 +25,6 @@ function write_asset_timeseries(conn, assets, timestamp, simulation_id, model_id
     end
 end
 
-
-"Create a new simulation and return its ID"
-# function create_simulation(conn; name="Simulation", description="", parameters=Dict())
-#     result = LibPQ.execute(
-#         conn,
-#         "INSERT INTO simulation (name, description, start_time, parameters) VALUES (\$1, \$2, \$3, \$4) RETURNING id",
-#         (name, description, Dates.now(), JSON3.write(parameters))
-#     )
-#     id = LibPQ.fetch(result)[1, 1]  # Gets first row, first column
-#     return Int64(id)
-#     # return LibPQ.getvalue(result, 1, 1) |> parse(Int)
-# end
-
 function create_simulation(conn; model_id, name="Simulation", description="", parameters=Dict())
     result = LibPQ.execute(
         conn,
@@ -50,6 +37,6 @@ end
 
 "Check if a simulation exists"
 function simulation_exists(conn, simulation_id::Int)
-    result = LibPQ.execute(conn, "SELECT 1 FROM simulation WHERE id = ?", (simulation_id,))
-    return LibPQ.ntuples(result) > 0
+    result = LibPQ.execute(conn, "SELECT 1 FROM simulation WHERE id = \$1", (simulation_id,))
+    return !isempty(result)  # Direct check on LibPQ.Result
 end
